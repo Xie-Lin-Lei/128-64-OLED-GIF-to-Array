@@ -2,6 +2,8 @@
 
 https://xie-lin-lei.github.io/128-64-OLED-GIF-to-Array/
 
+STM32F103C8T6示例程序：[Xie-Lin-Lei/OLED_Display](https://github.com/Xie-Lin-Lei/OLED_Display)
+
 # 128*64 OLED GIF to Array
 
 这是一个用于 `128x64` 单色 OLED 屏幕的 GIF 转数组工具。网页会在浏览器本地读取 GIF 图片，自动把 GIF 拆分成每一帧静态图，然后把每一帧转换成 Arduino/C 可用的 `uint8_t` 数组。
