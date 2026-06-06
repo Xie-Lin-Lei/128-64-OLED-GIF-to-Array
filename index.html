@@ -305,6 +305,12 @@
       margin: 16px 0 10px;
     }
 
+    .code-block-section {
+      margin-top: 22px;
+      padding-top: 18px;
+      border-top: 1px solid #ccc;
+    }
+
     .dropzone {
       display: grid;
       place-items: center;
@@ -523,6 +529,24 @@
       </div>
       <textarea id="output" class="output" aria-label="Generated code"></textarea>
       <p id="outputStatus" class="status"></p>
+
+      <div class="code-block-section">
+        <h2>OLED display code</h2>
+        <div class="settings-grid">
+          <label for="delayValue">Delay value:</label>
+          <div>
+            <input id="delayValue" type="number" min="0" step="1" value="25">
+            <span>ms</span>
+            <p class="subtext">用于生成每一帧后面的 Delay(数字);</p>
+          </div>
+        </div>
+        <div class="button-row output-tools">
+          <button id="generateDisplayButton" type="button" disabled>Generate display code</button>
+          <button id="copyDisplayButton" type="button" disabled>Copy display code</button>
+        </div>
+        <textarea id="displayOutput" class="output" aria-label="Generated OLED display code"></textarea>
+        <p id="displayStatus" class="status"></p>
+      </div>
     </section>
   </main>
 
@@ -563,6 +587,11 @@
       manualDownloadLink: document.getElementById('manualDownloadLink'),
       output: document.getElementById('output'),
       outputStatus: document.getElementById('outputStatus'),
+      delayValue: document.getElementById('delayValue'),
+      generateDisplayButton: document.getElementById('generateDisplayButton'),
+      copyDisplayButton: document.getElementById('copyDisplayButton'),
+      displayOutput: document.getElementById('displayOutput'),
+      displayStatus: document.getElementById('displayStatus'),
     };
 
     const state = {
@@ -583,6 +612,10 @@
 
     function setStatus(message) {
       els.outputStatus.textContent = message;
+    }
+
+    function setDisplayStatus(message) {
+      els.displayStatus.textContent = message;
     }
 
     function sanitizeIdentifier(value) {
@@ -847,6 +880,8 @@
       els.generateButton.disabled = !hasFrames;
       els.copyButton.disabled = !els.output.value.trim();
       els.downloadButton.disabled = !els.output.value.trim();
+      els.generateDisplayButton.disabled = !hasFrames;
+      els.copyDisplayButton.disabled = !els.displayOutput.value.trim();
       els.clearButton.disabled = !hasFrames;
       els.frameCount.textContent = hasFrames
         ? `${state.bitmapFrames.length} frame(s), fixed 128 x 64`
@@ -967,6 +1002,28 @@
       });
       els.output.value = chunks.join('\n\n');
       setStatus(`已生成 ${state.bitmapFrames.length} 个数组，每帧 ${WIDTH * HEIGHT / 8} bytes。`);
+      generateDisplayCode();
+      updateButtons();
+    }
+
+    function generateDisplayCode() {
+      if (!state.bitmapFrames.length) return;
+
+      const prefix = sanitizeIdentifier(els.identifier.value);
+      const delay = Math.max(0, Math.floor(Number(els.delayValue.value) || 0));
+      const chunks = state.bitmapFrames.map((_, index) => {
+        const bitmapName = `${prefix}${index + 1}`;
+        return [
+          'OLED_Clear(&oled);',
+          'OLED_SetCursor(&oled, 0, 0);',
+          `OLED_DrawBitmap(&oled, 128, 64, ${bitmapName});`,
+          'OLED_SendBuffer(&oled);',
+          `Delay(${delay});`,
+        ].join('\n');
+      });
+
+      els.displayOutput.value = chunks.join('\n\n');
+      setDisplayStatus(`已生成 ${state.bitmapFrames.length} 段 OLED 显示代码。`);
       updateButtons();
     }
 
@@ -977,12 +1034,14 @@
       state.fileName = '';
       els.fileInput.value = '';
       els.output.value = '';
+      els.displayOutput.value = '';
       if (state.downloadUrl) URL.revokeObjectURL(state.downloadUrl);
       state.downloadUrl = '';
       els.manualDownloadLink.hidden = true;
       els.manualDownloadLink.removeAttribute('href');
       els.fileInfo.textContent = '';
       setStatus('');
+      setDisplayStatus('');
       renderPreview();
       renderFrameList();
       updateButtons();
@@ -1010,27 +1069,35 @@
     }
 
     async function copyOutput() {
-      if (!els.output.value.trim()) return;
+      await copyTextarea(els.output, setStatus);
+    }
+
+    async function copyDisplayOutput() {
+      await copyTextarea(els.displayOutput, setDisplayStatus);
+    }
+
+    async function copyTextarea(textarea, statusSetter) {
+      if (!textarea.value.trim()) return;
 
       try {
         if (navigator.clipboard && window.isSecureContext) {
-          await navigator.clipboard.writeText(els.output.value);
-          setStatus('代码已复制到剪贴板。');
+          await navigator.clipboard.writeText(textarea.value);
+          statusSetter('代码已复制到剪贴板。');
           return;
         }
       } catch (error) {
         console.warn('Clipboard API failed, using textarea fallback.', error);
       }
 
-      els.output.focus();
-      els.output.select();
-      els.output.setSelectionRange(0, els.output.value.length);
+      textarea.focus();
+      textarea.select();
+      textarea.setSelectionRange(0, textarea.value.length);
 
       try {
         const copied = document.execCommand('copy');
-        setStatus(copied ? '代码已复制到剪贴板。' : '复制被浏览器阻止，请按 Ctrl+C 手动复制。');
+        statusSetter(copied ? '代码已复制到剪贴板。' : '复制被浏览器阻止，请按 Ctrl+C 手动复制。');
       } catch (error) {
-        setStatus('复制被浏览器阻止，请按 Ctrl+C 手动复制。');
+        statusSetter('复制被浏览器阻止，请按 Ctrl+C 手动复制。');
       }
     }
 
@@ -1071,8 +1138,13 @@
     els.generateButton.addEventListener('click', generateCode);
     els.copyButton.addEventListener('click', copyOutput);
     els.downloadButton.addEventListener('click', downloadHeader);
+    els.generateDisplayButton.addEventListener('click', generateDisplayCode);
+    els.copyDisplayButton.addEventListener('click', copyDisplayOutput);
     els.readHorizontal.addEventListener('click', () => loadPastedArray('horizontal'));
     els.readVertical.addEventListener('click', () => loadPastedArray('vertical'));
+    els.delayValue.addEventListener('input', () => {
+      if (state.bitmapFrames.length) generateDisplayCode();
+    });
 
     [
       'invertColors',
@@ -1132,11 +1204,15 @@
       loadFile,
       clearAll,
       generateCode,
+      generateDisplayCode,
       get frameCount() {
         return state.bitmapFrames.length;
       },
       get output() {
         return els.output.value;
+      },
+      get displayOutput() {
+        return els.displayOutput.value;
       },
     };
   </script>
