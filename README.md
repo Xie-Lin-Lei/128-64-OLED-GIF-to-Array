@@ -1,16 +1,6 @@
-# 本地访问网页
+# 在线访问地址
 
-本地直接打开：
-
-```text
-file:///D:/128_64_OLED/index.html
-```
-
-如果已经开启 GitHub Pages，也可以在线访问：
-
-```text
 https://xie-lin-lei.github.io/128-64-OLED-GIF-to-Array/
-```
 
 # 128*64 OLED GIF to Array
 
