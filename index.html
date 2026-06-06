@@ -1,0 +1,1144 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>GIF image2cpp - 128x64 OLED</title>
+  <style>
+    :root {
+      --accent: #08c99a;
+      --accent-dark: #079876;
+      --ink: #0a0a0a;
+      --muted: #555;
+      --line: #111;
+      --panel: #f7f7f7;
+      --white: #fff;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 14px;
+      line-height: 1.35;
+      color: var(--ink);
+      background: var(--white);
+    }
+
+    main {
+      width: min(960px, calc(100vw - 28px));
+      margin: 16px auto;
+    }
+
+    header {
+      position: relative;
+      display: flex;
+      gap: 16px;
+      align-items: flex-end;
+      justify-content: space-between;
+      padding: 12px 16px;
+      color: #fff;
+      background: var(--accent);
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 30px;
+      letter-spacing: 0;
+    }
+
+    .author {
+      flex: 0 0 auto;
+      padding-bottom: 3px;
+      font-size: 15px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    h2 {
+      margin: 0 0 12px;
+      font-size: 22px;
+    }
+
+    .intro {
+      max-width: 760px;
+      margin: 18px 0 24px;
+      font-size: 14px;
+    }
+
+    .section {
+      padding: 18px 0 22px;
+      border-top: 1px solid var(--line);
+    }
+
+    .section:first-of-type {
+      border-top: 0;
+    }
+
+    .select-grid {
+      display: grid;
+      grid-template-columns: minmax(280px, 1fr) 72px minmax(280px, 1fr);
+      gap: 24px;
+      align-items: start;
+    }
+
+    .or {
+      padding-top: 34px;
+      text-align: center;
+      font-size: 21px;
+      font-weight: 700;
+    }
+
+    .hint {
+      margin: 0 0 12px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .upload-row,
+    .button-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+    }
+
+    input[type="file"] {
+      max-width: 100%;
+      padding: 7px;
+      border-radius: 4px;
+      color: #fff;
+      background: var(--accent);
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 170px;
+      resize: vertical;
+      border: 1px solid #999;
+      font: 12px/1.45 Consolas, "Courier New", monospace;
+    }
+
+    textarea.output {
+      min-height: 300px;
+    }
+
+    label {
+      font-weight: 700;
+    }
+
+    .settings-grid {
+      display: grid;
+      grid-template-columns: 250px minmax(320px, 1fr);
+      gap: 10px 24px;
+      align-items: start;
+      max-width: 820px;
+    }
+
+    .canvas-size {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      align-items: center;
+    }
+
+    .fixed-input {
+      width: 58px;
+      padding: 2px 5px;
+      border: 1px solid #777;
+      background: #eee;
+      color: #111;
+    }
+
+    .inline-controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 14px;
+      align-items: center;
+    }
+
+    .control {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-weight: 400;
+    }
+
+    select,
+    input[type="number"],
+    input[type="text"] {
+      padding: 2px 5px;
+      border: 1px solid #777;
+      background: #fff;
+    }
+
+    input[type="number"] {
+      width: 78px;
+    }
+
+    input[type="text"] {
+      width: 180px;
+      font-family: Consolas, "Courier New", monospace;
+    }
+
+    .subtext {
+      margin: 4px 0 0;
+      color: var(--muted);
+      font-size: 12px;
+      font-style: italic;
+    }
+
+    button {
+      min-height: 26px;
+      padding: 5px 10px;
+      border: 0;
+      border-radius: 4px;
+      color: #fff;
+      background: var(--accent);
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: var(--accent-dark);
+    }
+
+    button:disabled {
+      cursor: not-allowed;
+      opacity: .5;
+    }
+
+    .download-link {
+      display: inline-flex;
+      min-height: 26px;
+      padding: 5px 10px;
+      border-radius: 4px;
+      color: #fff;
+      background: var(--accent-dark);
+      font-weight: 700;
+      text-decoration: none;
+      align-items: center;
+    }
+
+    .download-link[hidden] {
+      display: none;
+    }
+
+    .status {
+      margin-top: 10px;
+      min-height: 20px;
+      color: var(--muted);
+    }
+
+    .preview-wrap {
+      display: grid;
+      grid-template-columns: 160px minmax(0, 1fr);
+      gap: 20px;
+      align-items: start;
+    }
+
+    .screen-preview {
+      display: grid;
+      place-items: center;
+      width: 160px;
+      height: 80px;
+      border: 2px solid var(--accent);
+      background:
+        linear-gradient(45deg, #ddd 25%, transparent 25%),
+        linear-gradient(-45deg, #ddd 25%, transparent 25%),
+        linear-gradient(45deg, transparent 75%, #ddd 75%),
+        linear-gradient(-45deg, transparent 75%, #ddd 75%);
+      background-color: #fff;
+      background-position: 0 0, 0 8px, 8px -8px, -8px 0;
+      background-size: 16px 16px;
+    }
+
+    #previewCanvas {
+      width: 128px;
+      height: 64px;
+      image-rendering: pixelated;
+      background: #fff;
+    }
+
+    .frame-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(76px, 1fr));
+      gap: 10px;
+      max-height: 260px;
+      overflow: auto;
+      padding-right: 4px;
+    }
+
+    .frame-button {
+      padding: 6px;
+      border: 1px solid #bbb;
+      border-radius: 4px;
+      background: var(--panel);
+      color: var(--ink);
+      text-align: left;
+    }
+
+    .frame-button.active {
+      border-color: var(--accent);
+      box-shadow: inset 0 0 0 1px var(--accent);
+    }
+
+    .frame-button canvas {
+      display: block;
+      width: 64px;
+      height: 32px;
+      margin-bottom: 4px;
+      image-rendering: pixelated;
+      background: #fff;
+    }
+
+    .frame-button span {
+      display: block;
+      font-size: 12px;
+      white-space: nowrap;
+    }
+
+    .output-tools {
+      margin: 16px 0 10px;
+    }
+
+    .dropzone {
+      display: grid;
+      place-items: center;
+      min-height: 122px;
+      margin-top: 12px;
+      padding: 18px;
+      border: 1px dashed #aaa;
+      color: var(--muted);
+      background: #fafafa;
+      text-align: center;
+    }
+
+    .dropzone.dragover {
+      border-color: var(--accent);
+      background: #eafff8;
+    }
+
+    @media (max-width: 760px) {
+      main {
+        width: min(100% - 20px, 960px);
+      }
+
+      h1 {
+        font-size: 26px;
+      }
+
+      header {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .author {
+        align-self: flex-end;
+        padding-bottom: 0;
+      }
+
+      .select-grid,
+      .settings-grid,
+      .preview-wrap {
+        grid-template-columns: 1fr;
+      }
+
+      .or {
+        padding-top: 0;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <h1>128*64 OLED GIF to Array</h1>
+      <div class="author">作者：解林磊</div>
+    </header>
+
+    <p class="intro">
+      这个工具基于 image2cpp 的思路重新设计，专门用于 128x64 单色 OLED。选择 GIF 后会在浏览器本地拆分每一帧，并把每帧转换成 Arduino/C 的 <code>uint8_t</code> 位图数组。
+    </p>
+
+    <section class="section">
+      <div class="select-grid">
+        <div>
+          <h2>1. Select GIF image</h2>
+          <p class="hint">所有处理都在你的浏览器本地完成，文件不会上传。</p>
+          <div class="upload-row">
+            <input id="fileInput" type="file" accept="image/gif,image/png,image/jpeg,image/webp,image/bmp">
+            <button id="clearButton" type="button" disabled>remove</button>
+          </div>
+          <div id="dropzone" class="dropzone">拖放 GIF 到这里</div>
+          <p id="fileInfo" class="status"></p>
+        </div>
+
+        <div class="or">or</div>
+
+        <div>
+          <h2>1. Paste byte array</h2>
+          <textarea id="pasteInput" aria-label="Paste byte array"></textarea>
+          <div class="canvas-size" aria-label="Fixed paste canvas size">
+            <input class="fixed-input" type="text" value="128" disabled>
+            <span>x</span>
+            <input class="fixed-input" type="text" value="64" disabled>
+            <span>px</span>
+          </div>
+          <div class="button-row">
+            <button id="readHorizontal" type="button">Read as horizontal</button>
+            <button id="readVertical" type="button">Read as vertical</button>
+          </div>
+          <p class="hint">读取后的图像会显示在预览区域。</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>2. Image Settings</h2>
+      <div class="settings-grid">
+        <label>Canvas size(s):</label>
+        <div>
+          <div class="canvas-size">
+            <input class="fixed-input" type="text" value="128" disabled>
+            <span>x</span>
+            <input class="fixed-input" type="text" value="64" disabled>
+            <span>px</span>
+            <span class="hint" id="frameCount">waiting for image</span>
+          </div>
+        </div>
+
+        <label>Background color:</label>
+        <div class="inline-controls">
+          <label class="control"><input type="radio" name="background" value="white" checked>White</label>
+          <label class="control"><input type="radio" name="background" value="black">Black</label>
+          <label class="control"><input type="radio" name="background" value="transparent">Transparent</label>
+        </div>
+
+        <label for="invertColors">Invert image colors</label>
+        <div><input id="invertColors" type="checkbox"></div>
+
+        <label for="ditherMode">Dithering:</label>
+        <div>
+          <select id="ditherMode">
+            <option value="binary">Binary</option>
+            <option value="floyd">Floyd-Steinberg</option>
+          </select>
+        </div>
+
+        <label for="threshold">Brightness / alpha threshold:</label>
+        <div>
+          <input id="threshold" type="number" min="0" max="255" value="128">
+          <p class="subtext">0 - 255；高于该亮度的像素变为白色，否则变为黑色。</p>
+        </div>
+
+        <label for="scaling">Scaling:</label>
+        <div>
+          <select id="scaling">
+            <option value="fit" selected>fit to 128x64</option>
+            <option value="fill">fill and crop</option>
+            <option value="original">original size</option>
+            <option value="stretch">stretch to 128x64</option>
+          </select>
+        </div>
+
+        <label>Center image:</label>
+        <div class="inline-controls">
+          <label class="control"><input id="centerHorizontal" type="checkbox" checked>horizontally</label>
+          <label class="control"><input id="centerVertical" type="checkbox" checked>vertically</label>
+        </div>
+
+        <label for="rotation">Rotate image:</label>
+        <div>
+          <select id="rotation">
+            <option value="0">0</option>
+            <option value="90">90</option>
+            <option value="180">180</option>
+            <option value="270">270</option>
+          </select>
+          <span>degrees</span>
+        </div>
+
+        <label>Flip image:</label>
+        <div class="inline-controls">
+          <label class="control"><input id="flipHorizontal" type="checkbox">horizontally</label>
+          <label class="control"><input id="flipVertical" type="checkbox">vertically</label>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>3. Preview</h2>
+      <div class="preview-wrap">
+        <div>
+          <div class="screen-preview">
+            <canvas id="previewCanvas" width="128" height="64"></canvas>
+          </div>
+          <p id="previewInfo" class="status">还没有加载图片。</p>
+        </div>
+        <div>
+          <div id="frameList" class="frame-list" aria-label="GIF frame previews"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>4. Output</h2>
+      <div class="settings-grid">
+        <label for="outputFormat">Code output format</label>
+        <div>
+          <select id="outputFormat">
+            <option value="arduino" selected>Arduino code</option>
+          </select>
+        </div>
+
+        <label for="identifier">Identifier/Prefix:</label>
+        <div>
+          <input id="identifier" type="text" value="bitmap_">
+          <p class="subtext">输出格式：const uint8_t bitmap_第几帧[] = { 0x.. };</p>
+        </div>
+
+        <label for="drawMode">Draw mode:</label>
+        <div>
+          <select id="drawMode">
+            <option value="horizontal" selected>Horizontal - 1 bit per pixel</option>
+            <option value="vertical">Vertical - 1 bit per pixel</option>
+          </select>
+        </div>
+
+        <label for="swapBits">Swap bits in byte:</label>
+        <div>
+          <label class="control"><input id="swapBits" type="checkbox">Swap</label>
+        </div>
+      </div>
+
+      <div class="button-row output-tools">
+        <button id="generateButton" type="button" disabled>Generate code</button>
+        <button id="copyButton" type="button" disabled>Copy Output</button>
+        <button id="downloadButton" type="button" disabled>Download .h</button>
+        <a id="manualDownloadLink" class="download-link" hidden>Manual download</a>
+      </div>
+      <textarea id="output" class="output" aria-label="Generated code"></textarea>
+      <p id="outputStatus" class="status"></p>
+    </section>
+  </main>
+
+  <script src="gifuct-js.min.js"></script>
+  <script>
+    const WIDTH = 128;
+    const HEIGHT = 64;
+    const WHITE = [255, 255, 255, 255];
+    const BLACK = [0, 0, 0, 255];
+
+    const els = {
+      fileInput: document.getElementById('fileInput'),
+      clearButton: document.getElementById('clearButton'),
+      dropzone: document.getElementById('dropzone'),
+      fileInfo: document.getElementById('fileInfo'),
+      frameCount: document.getElementById('frameCount'),
+      frameList: document.getElementById('frameList'),
+      previewCanvas: document.getElementById('previewCanvas'),
+      previewInfo: document.getElementById('previewInfo'),
+      pasteInput: document.getElementById('pasteInput'),
+      readHorizontal: document.getElementById('readHorizontal'),
+      readVertical: document.getElementById('readVertical'),
+      invertColors: document.getElementById('invertColors'),
+      ditherMode: document.getElementById('ditherMode'),
+      threshold: document.getElementById('threshold'),
+      scaling: document.getElementById('scaling'),
+      centerHorizontal: document.getElementById('centerHorizontal'),
+      centerVertical: document.getElementById('centerVertical'),
+      rotation: document.getElementById('rotation'),
+      flipHorizontal: document.getElementById('flipHorizontal'),
+      flipVertical: document.getElementById('flipVertical'),
+      identifier: document.getElementById('identifier'),
+      drawMode: document.getElementById('drawMode'),
+      swapBits: document.getElementById('swapBits'),
+      generateButton: document.getElementById('generateButton'),
+      copyButton: document.getElementById('copyButton'),
+      downloadButton: document.getElementById('downloadButton'),
+      manualDownloadLink: document.getElementById('manualDownloadLink'),
+      output: document.getElementById('output'),
+      outputStatus: document.getElementById('outputStatus'),
+    };
+
+    const state = {
+      sourceFrames: [],
+      bitmapFrames: [],
+      selectedFrame: 0,
+      fileName: '',
+      downloadUrl: '',
+    };
+
+    const previewCtx = els.previewCanvas.getContext('2d', { willReadFrequently: true });
+    previewCtx.fillStyle = '#fff';
+    previewCtx.fillRect(0, 0, WIDTH, HEIGHT);
+
+    function getBackground() {
+      return document.querySelector('input[name="background"]:checked').value;
+    }
+
+    function setStatus(message) {
+      els.outputStatus.textContent = message;
+    }
+
+    function sanitizeIdentifier(value) {
+      const cleaned = value.trim().replace(/[^a-zA-Z0-9_]/g, '_');
+      if (!cleaned) return 'bitmap_';
+      return /^[a-zA-Z_]/.test(cleaned) ? cleaned : `_${cleaned}`;
+    }
+
+    function reverseBits(byte) {
+      let out = 0;
+      for (let i = 0; i < 8; i++) {
+        out = (out << 1) | ((byte >> i) & 1);
+      }
+      return out;
+    }
+
+    function parseHexBytes(text) {
+      return Array.from(text.matchAll(/0x([0-9a-fA-F]{1,2})|\b(\d{1,3})\b/g), match => {
+        const value = match[1] ? parseInt(match[1], 16) : parseInt(match[2], 10);
+        return Number.isFinite(value) ? Math.max(0, Math.min(255, value)) : 0;
+      });
+    }
+
+    function byteArrayToBitmap(bytes, mode) {
+      const pixels = new Uint8Array(WIDTH * HEIGHT);
+      let index = 0;
+
+      if (mode === 'horizontal') {
+        for (let y = 0; y < HEIGHT; y++) {
+          for (let xByte = 0; xByte < WIDTH / 8; xByte++) {
+            const byte = bytes[index++] ?? 0;
+            for (let bit = 0; bit < 8; bit++) {
+              const x = xByte * 8 + bit;
+              pixels[y * WIDTH + x] = (byte & (0x80 >> bit)) ? 1 : 0;
+            }
+          }
+        }
+      } else {
+        for (let x = 0; x < WIDTH; x++) {
+          for (let yByte = 0; yByte < HEIGHT / 8; yByte++) {
+            const byte = bytes[index++] ?? 0;
+            for (let bit = 0; bit < 8; bit++) {
+              const y = yByte * 8 + bit;
+              pixels[y * WIDTH + x] = (byte & (0x80 >> bit)) ? 1 : 0;
+            }
+          }
+        }
+      }
+
+      return pixels;
+    }
+
+    function bitmapToBytes(pixels, mode, swapBits) {
+      const bytes = [];
+
+      if (mode === 'horizontal') {
+        for (let y = 0; y < HEIGHT; y++) {
+          for (let xByte = 0; xByte < WIDTH / 8; xByte++) {
+            let byte = 0;
+            for (let bit = 0; bit < 8; bit++) {
+              const x = xByte * 8 + bit;
+              if (pixels[y * WIDTH + x]) byte |= 0x80 >> bit;
+            }
+            bytes.push(swapBits ? reverseBits(byte) : byte);
+          }
+        }
+      } else {
+        for (let x = 0; x < WIDTH; x++) {
+          for (let yByte = 0; yByte < HEIGHT / 8; yByte++) {
+            let byte = 0;
+            for (let bit = 0; bit < 8; bit++) {
+              const y = yByte * 8 + bit;
+              if (pixels[y * WIDTH + x]) byte |= 0x80 >> bit;
+            }
+            bytes.push(swapBits ? reverseBits(byte) : byte);
+          }
+        }
+      }
+
+      return bytes;
+    }
+
+    function bytesToCode(bytes, name) {
+      const hex = bytes.map(byte => `0x${byte.toString(16).toUpperCase().padStart(2, '0')}`);
+      const lines = [];
+
+      for (let i = 0; i < hex.length; i += 16) {
+        lines.push(`  ${hex.slice(i, i + 16).join(', ')}`);
+      }
+
+      return `const uint8_t ${name}[] = {\n${lines.join(',\n')}\n};`;
+    }
+
+    function drawBitmapToCanvas(canvas, pixels) {
+      const ctx = canvas.getContext('2d', { willReadFrequently: true });
+      const imageData = ctx.createImageData(WIDTH, HEIGHT);
+
+      for (let i = 0; i < pixels.length; i++) {
+        const color = pixels[i] ? BLACK : WHITE;
+        const offset = i * 4;
+        imageData.data[offset] = color[0];
+        imageData.data[offset + 1] = color[1];
+        imageData.data[offset + 2] = color[2];
+        imageData.data[offset + 3] = color[3];
+      }
+
+      ctx.putImageData(imageData, 0, 0);
+    }
+
+    function getProcessedBitmap(sourceCanvas) {
+      const work = document.createElement('canvas');
+      work.width = WIDTH;
+      work.height = HEIGHT;
+      const ctx = work.getContext('2d', { willReadFrequently: true });
+      const background = getBackground();
+
+      if (background === 'transparent') {
+        ctx.clearRect(0, 0, WIDTH, HEIGHT);
+      } else {
+        ctx.fillStyle = background === 'black' ? '#000' : '#fff';
+        ctx.fillRect(0, 0, WIDTH, HEIGHT);
+      }
+
+      const rotation = Number(els.rotation.value);
+      const rotated = rotation === 90 || rotation === 270;
+      const sourceWidth = sourceCanvas.width;
+      const sourceHeight = sourceCanvas.height;
+      const targetBaseWidth = rotated ? HEIGHT : WIDTH;
+      const targetBaseHeight = rotated ? WIDTH : HEIGHT;
+      const scaling = els.scaling.value;
+      let drawWidth = sourceWidth;
+      let drawHeight = sourceHeight;
+
+      if (scaling === 'stretch') {
+        drawWidth = targetBaseWidth;
+        drawHeight = targetBaseHeight;
+      } else if (scaling === 'fit' || scaling === 'fill') {
+        const scale = scaling === 'fit'
+          ? Math.min(targetBaseWidth / sourceWidth, targetBaseHeight / sourceHeight)
+          : Math.max(targetBaseWidth / sourceWidth, targetBaseHeight / sourceHeight);
+        drawWidth = Math.max(1, Math.round(sourceWidth * scale));
+        drawHeight = Math.max(1, Math.round(sourceHeight * scale));
+      }
+
+      let x = els.centerHorizontal.checked ? Math.round((targetBaseWidth - drawWidth) / 2) : 0;
+      let y = els.centerVertical.checked ? Math.round((targetBaseHeight - drawHeight) / 2) : 0;
+
+      ctx.save();
+      ctx.translate(WIDTH / 2, HEIGHT / 2);
+      ctx.rotate(rotation * Math.PI / 180);
+      ctx.scale(els.flipHorizontal.checked ? -1 : 1, els.flipVertical.checked ? -1 : 1);
+      ctx.drawImage(sourceCanvas, x - targetBaseWidth / 2, y - targetBaseHeight / 2, drawWidth, drawHeight);
+      ctx.restore();
+
+      const imageData = ctx.getImageData(0, 0, WIDTH, HEIGHT);
+      return els.ditherMode.value === 'floyd'
+        ? ditherImageData(imageData)
+        : thresholdImageData(imageData);
+    }
+
+    function thresholdImageData(imageData) {
+      const pixels = new Uint8Array(WIDTH * HEIGHT);
+      const threshold = Number(els.threshold.value);
+      const invert = els.invertColors.checked;
+      const transparentAsWhite = getBackground() !== 'black';
+
+      for (let i = 0; i < pixels.length; i++) {
+        const offset = i * 4;
+        const alpha = imageData.data[offset + 3];
+        const brightness = alpha < threshold
+          ? (transparentAsWhite ? 255 : 0)
+          : 0.299 * imageData.data[offset] + 0.587 * imageData.data[offset + 1] + 0.114 * imageData.data[offset + 2];
+        let bit = brightness < threshold ? 1 : 0;
+        if (invert) bit = bit ? 0 : 1;
+        pixels[i] = bit;
+      }
+
+      return pixels;
+    }
+
+    function ditherImageData(imageData) {
+      const threshold = Number(els.threshold.value);
+      const invert = els.invertColors.checked;
+      const transparentAsWhite = getBackground() !== 'black';
+      const gray = new Float32Array(WIDTH * HEIGHT);
+      const pixels = new Uint8Array(WIDTH * HEIGHT);
+
+      for (let i = 0; i < gray.length; i++) {
+        const offset = i * 4;
+        const alpha = imageData.data[offset + 3];
+        gray[i] = alpha < threshold
+          ? (transparentAsWhite ? 255 : 0)
+          : 0.299 * imageData.data[offset] + 0.587 * imageData.data[offset + 1] + 0.114 * imageData.data[offset + 2];
+      }
+
+      for (let y = 0; y < HEIGHT; y++) {
+        for (let x = 0; x < WIDTH; x++) {
+          const idx = y * WIDTH + x;
+          const oldValue = gray[idx];
+          const newValue = oldValue < threshold ? 0 : 255;
+          const error = oldValue - newValue;
+          let bit = newValue === 0 ? 1 : 0;
+          if (invert) bit = bit ? 0 : 1;
+          pixels[idx] = bit;
+
+          if (x + 1 < WIDTH) gray[idx + 1] += error * 7 / 16;
+          if (x > 0 && y + 1 < HEIGHT) gray[idx + WIDTH - 1] += error * 3 / 16;
+          if (y + 1 < HEIGHT) gray[idx + WIDTH] += error * 5 / 16;
+          if (x + 1 < WIDTH && y + 1 < HEIGHT) gray[idx + WIDTH + 1] += error * 1 / 16;
+        }
+      }
+
+      return pixels;
+    }
+
+    function rebuildBitmaps() {
+      state.bitmapFrames = state.sourceFrames.map(frame => getProcessedBitmap(frame.canvas));
+      renderPreview();
+      renderFrameList();
+      updateButtons();
+    }
+
+    function renderPreview() {
+      if (!state.bitmapFrames.length) {
+        previewCtx.fillStyle = '#fff';
+        previewCtx.fillRect(0, 0, WIDTH, HEIGHT);
+        els.previewInfo.textContent = '还没有加载图片。';
+        return;
+      }
+
+      const index = Math.min(state.selectedFrame, state.bitmapFrames.length - 1);
+      state.selectedFrame = index;
+      drawBitmapToCanvas(els.previewCanvas, state.bitmapFrames[index]);
+      const delay = state.sourceFrames[index]?.delay;
+      els.previewInfo.textContent = `Frame ${index + 1} / ${state.bitmapFrames.length}${delay ? `, delay ${delay} ms` : ''}`;
+    }
+
+    function renderFrameList() {
+      els.frameList.textContent = '';
+      state.bitmapFrames.forEach((pixels, index) => {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = `frame-button${index === state.selectedFrame ? ' active' : ''}`;
+        const canvas = document.createElement('canvas');
+        canvas.width = WIDTH;
+        canvas.height = HEIGHT;
+        drawBitmapToCanvas(canvas, pixels);
+        const label = document.createElement('span');
+        label.textContent = `Frame ${index + 1}`;
+        button.append(canvas, label);
+        button.addEventListener('click', () => {
+          state.selectedFrame = index;
+          renderPreview();
+          renderFrameList();
+        });
+        els.frameList.appendChild(button);
+      });
+    }
+
+    function updateButtons() {
+      const hasFrames = state.bitmapFrames.length > 0;
+      els.generateButton.disabled = !hasFrames;
+      els.copyButton.disabled = !els.output.value.trim();
+      els.downloadButton.disabled = !els.output.value.trim();
+      els.clearButton.disabled = !hasFrames;
+      els.frameCount.textContent = hasFrames
+        ? `${state.bitmapFrames.length} frame(s), fixed 128 x 64`
+        : 'waiting for image';
+    }
+
+    async function loadFile(file) {
+      if (!file) return;
+      els.fileInfo.textContent = `正在读取 ${file.name} ...`;
+      setStatus('');
+      state.fileName = file.name;
+      const buffer = await file.arrayBuffer();
+
+      try {
+        if (file.type === 'image/gif' || /\.gif$/i.test(file.name)) {
+          await loadGif(buffer);
+        } else {
+          await loadStaticImage(file);
+        }
+        rebuildBitmaps();
+        generateCode();
+        els.fileInfo.textContent = `${file.name} loaded, ${state.sourceFrames.length} frame(s).`;
+      } catch (error) {
+        console.error(error);
+        clearAll();
+        els.fileInfo.textContent = `读取失败：${error.message}`;
+      }
+    }
+
+    async function loadGif(buffer) {
+      if (!window.GIF) {
+        throw new Error('GIF decoder was not loaded.');
+      }
+
+      const gif = new window.GIF(buffer);
+      const frames = gif.decompressFrames(true);
+      if (!frames.length) throw new Error('GIF 中没有找到可用帧。');
+
+      const width = gif.raw.lsd.width;
+      const height = gif.raw.lsd.height;
+      const composed = document.createElement('canvas');
+      composed.width = width;
+      composed.height = height;
+      const composedCtx = composed.getContext('2d', { willReadFrequently: true });
+      const previous = document.createElement('canvas');
+      previous.width = width;
+      previous.height = height;
+      const previousCtx = previous.getContext('2d', { willReadFrequently: true });
+      const outFrames = [];
+
+      for (const frame of frames) {
+        const disposal = frame.disposalType || 0;
+        if (disposal === 3) {
+          previousCtx.clearRect(0, 0, width, height);
+          previousCtx.drawImage(composed, 0, 0);
+        }
+
+        const patch = new ImageData(frame.patch, frame.dims.width, frame.dims.height);
+        const current = composedCtx.getImageData(frame.dims.left, frame.dims.top, frame.dims.width, frame.dims.height);
+
+        for (let i = 0; i < patch.data.length; i += 4) {
+          if (patch.data[i + 3] === 0) continue;
+          current.data[i] = patch.data[i];
+          current.data[i + 1] = patch.data[i + 1];
+          current.data[i + 2] = patch.data[i + 2];
+          current.data[i + 3] = patch.data[i + 3];
+        }
+
+        composedCtx.putImageData(current, frame.dims.left, frame.dims.top);
+
+        const snapshot = document.createElement('canvas');
+        snapshot.width = width;
+        snapshot.height = height;
+        snapshot.getContext('2d').drawImage(composed, 0, 0);
+        outFrames.push({ canvas: snapshot, delay: frame.delay || 0 });
+
+        if (disposal === 2) {
+          composedCtx.clearRect(frame.dims.left, frame.dims.top, frame.dims.width, frame.dims.height);
+        } else if (disposal === 3) {
+          composedCtx.clearRect(0, 0, width, height);
+          composedCtx.drawImage(previous, 0, 0);
+        }
+      }
+
+      state.sourceFrames = outFrames;
+      state.selectedFrame = 0;
+    }
+
+    async function loadStaticImage(file) {
+      const url = URL.createObjectURL(file);
+      try {
+        const image = await new Promise((resolve, reject) => {
+          const img = new Image();
+          img.onload = () => resolve(img);
+          img.onerror = () => reject(new Error('图片无法加载。'));
+          img.src = url;
+        });
+
+        const canvas = document.createElement('canvas');
+        canvas.width = image.naturalWidth || image.width;
+        canvas.height = image.naturalHeight || image.height;
+        canvas.getContext('2d').drawImage(image, 0, 0);
+        state.sourceFrames = [{ canvas, delay: 0 }];
+        state.selectedFrame = 0;
+      } finally {
+        URL.revokeObjectURL(url);
+      }
+    }
+
+    function generateCode() {
+      if (!state.bitmapFrames.length) return;
+      const prefix = sanitizeIdentifier(els.identifier.value);
+      const mode = els.drawMode.value;
+      const swap = els.swapBits.checked;
+      const chunks = state.bitmapFrames.map((pixels, index) => {
+        const bytes = bitmapToBytes(pixels, mode, swap);
+        return bytesToCode(bytes, `${prefix}${index + 1}`);
+      });
+      els.output.value = chunks.join('\n\n');
+      setStatus(`已生成 ${state.bitmapFrames.length} 个数组，每帧 ${WIDTH * HEIGHT / 8} bytes。`);
+      updateButtons();
+    }
+
+    function clearAll() {
+      state.sourceFrames = [];
+      state.bitmapFrames = [];
+      state.selectedFrame = 0;
+      state.fileName = '';
+      els.fileInput.value = '';
+      els.output.value = '';
+      if (state.downloadUrl) URL.revokeObjectURL(state.downloadUrl);
+      state.downloadUrl = '';
+      els.manualDownloadLink.hidden = true;
+      els.manualDownloadLink.removeAttribute('href');
+      els.fileInfo.textContent = '';
+      setStatus('');
+      renderPreview();
+      renderFrameList();
+      updateButtons();
+    }
+
+    function loadPastedArray(mode) {
+      const bytes = parseHexBytes(els.pasteInput.value);
+      if (!bytes.length) {
+        setStatus('没有识别到 byte 数据。');
+        return;
+      }
+      const pixels = byteArrayToBitmap(bytes, mode);
+      const canvas = document.createElement('canvas');
+      canvas.width = WIDTH;
+      canvas.height = HEIGHT;
+      drawBitmapToCanvas(canvas, pixels);
+      state.sourceFrames = [{ canvas, delay: 0 }];
+      state.bitmapFrames = [pixels];
+      state.selectedFrame = 0;
+      els.fileInfo.textContent = `已读取 ${bytes.length} bytes。`;
+      renderPreview();
+      renderFrameList();
+      generateCode();
+      updateButtons();
+    }
+
+    async function copyOutput() {
+      if (!els.output.value.trim()) return;
+
+      try {
+        if (navigator.clipboard && window.isSecureContext) {
+          await navigator.clipboard.writeText(els.output.value);
+          setStatus('代码已复制到剪贴板。');
+          return;
+        }
+      } catch (error) {
+        console.warn('Clipboard API failed, using textarea fallback.', error);
+      }
+
+      els.output.focus();
+      els.output.select();
+      els.output.setSelectionRange(0, els.output.value.length);
+
+      try {
+        const copied = document.execCommand('copy');
+        setStatus(copied ? '代码已复制到剪贴板。' : '复制被浏览器阻止，请按 Ctrl+C 手动复制。');
+      } catch (error) {
+        setStatus('复制被浏览器阻止，请按 Ctrl+C 手动复制。');
+      }
+    }
+
+    function downloadHeader() {
+      if (!els.output.value.trim()) return;
+
+      const blob = new Blob([els.output.value], { type: 'text/x-chdr;charset=utf-8' });
+      if (state.downloadUrl) URL.revokeObjectURL(state.downloadUrl);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      const baseName = state.fileName ? state.fileName.replace(/\.[^.]+$/, '') : 'bitmap_frames';
+      const fileName = `${baseName}_128x64.h`;
+
+      state.downloadUrl = url;
+      els.manualDownloadLink.href = url;
+      els.manualDownloadLink.download = fileName;
+      els.manualDownloadLink.textContent = `Manual download ${fileName}`;
+      els.manualDownloadLink.hidden = false;
+
+      a.href = url;
+      a.download = fileName;
+      a.style.display = 'none';
+      document.body.appendChild(a);
+
+      try {
+        a.click();
+        setStatus(`已请求下载 ${fileName}。如果没有弹出下载，请点击旁边的 Manual download。`);
+      } catch (error) {
+        console.warn('Download failed.', error);
+        setStatus('下载被浏览器阻止，请点击旁边的 Manual download，或使用 Copy Output。');
+      } finally {
+        a.remove();
+      }
+    }
+
+    els.fileInput.addEventListener('change', event => loadFile(event.target.files[0]));
+    els.clearButton.addEventListener('click', clearAll);
+    els.generateButton.addEventListener('click', generateCode);
+    els.copyButton.addEventListener('click', copyOutput);
+    els.downloadButton.addEventListener('click', downloadHeader);
+    els.readHorizontal.addEventListener('click', () => loadPastedArray('horizontal'));
+    els.readVertical.addEventListener('click', () => loadPastedArray('vertical'));
+
+    [
+      'invertColors',
+      'ditherMode',
+      'threshold',
+      'scaling',
+      'centerHorizontal',
+      'centerVertical',
+      'rotation',
+      'flipHorizontal',
+      'flipVertical',
+      'drawMode',
+      'swapBits',
+      'identifier',
+    ].forEach(id => {
+      els[id].addEventListener('input', () => {
+        if (id === 'drawMode' || id === 'swapBits' || id === 'identifier') {
+          generateCode();
+          return;
+        }
+        if (state.sourceFrames.length) {
+          rebuildBitmaps();
+          generateCode();
+        }
+      });
+    });
+
+    document.querySelectorAll('input[name="background"]').forEach(input => {
+      input.addEventListener('change', () => {
+        if (state.sourceFrames.length) {
+          rebuildBitmaps();
+          generateCode();
+        }
+      });
+    });
+
+    ['dragenter', 'dragover'].forEach(name => {
+      els.dropzone.addEventListener(name, event => {
+        event.preventDefault();
+        els.dropzone.classList.add('dragover');
+      });
+    });
+
+    ['dragleave', 'drop'].forEach(name => {
+      els.dropzone.addEventListener(name, event => {
+        event.preventDefault();
+        els.dropzone.classList.remove('dragover');
+      });
+    });
+
+    els.dropzone.addEventListener('drop', event => {
+      const file = event.dataTransfer.files[0];
+      if (file) loadFile(file);
+    });
+
+    window.oledGifTool = {
+      loadFile,
+      clearAll,
+      generateCode,
+      get frameCount() {
+        return state.bitmapFrames.length;
+      },
+      get output() {
+        return els.output.value;
+      },
+    };
+  </script>
+</body>
+</html>
